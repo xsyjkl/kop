@@ -1,1107 +1,733 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VR Tropical Island</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>VR Tropical Island - A-Frame</title>
+    
+    <!-- A-Frame 库 -->
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    
+    <!-- A-Frame GLTF 模型加载组件 -->
+    <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-gltf-model-plus@v0.4.0/dist/aframe-gltf-model-plus.min.js"></script>
+    
     <style>
-        * {
+        body {
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-        }
-
-        html, body {
-            width: 100%;
-            height: 100%;
             overflow: hidden;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-        }
-
-        #container {
-            width: 100%;
-            height: 100%;
-            position: relative;
-        }
-
-        #canvas {
-            display: block;
-        }
-
-        .controls {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            border-radius: 12px;
-            padding: 20px;
-            color: white;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            z-index: 100;
-            backdrop-filter: blur(10px);
         }
-
-        .controls h2 {
-            font-size: 18px;
-            margin-bottom: 15px;
-            color: #00ff88;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            padding-bottom: 10px;
-        }
-
-        .control-group {
-            margin-bottom: 15px;
-        }
-
-        .control-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-size: 14px;
-            color: #aaa;
-        }
-
-        .control-group input[type="range"] {
-            width: 150px;
-            cursor: pointer;
-        }
-
-        .control-group input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-        }
-
-        .button-group {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: bold;
-            transition: all 0.3s ease;
-            background: linear-gradient(135deg, #00ff88, #00cc6a);
-            color: #1a1a2e;
-        }
-
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(0, 255, 136, 0.4);
-        }
-
-        button:active {
-            transform: translateY(0);
-        }
-
-        button.vr-btn {
-            background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
-            color: white;
-        }
-
-        button.vr-btn:hover {
-            box-shadow: 0 5px 20px rgba(255, 107, 107, 0.4);
-        }
-
-        .info-panel {
+        
+        /* 自定义加载界面 */
+        .loading-screen {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            border-radius: 12px;
-            padding: 15px 20px;
-            color: white;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-size: 12px;
-            z-index: 100;
-            backdrop-filter: blur(10px);
-            max-width: 250px;
-        }
-
-        .info-panel h3 {
-            color: #00ff88;
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
-
-        .info-panel ul {
-            list-style: none;
-            color: #ccc;
-            line-height: 1.8;
-        }
-
-        .info-panel li::before {
-            content: '•';
-            color: #00ff88;
-            margin-right: 8px;
-        }
-
-        .loading {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-size: 18px;
-            z-index: 200;
-        }
-
-        .loading::after {
-            content: '';
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #00ff88;
-            border-top-color: transparent;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-left: 10px;
-            vertical-align: middle;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .hide {
-            display: none;
-        }
-
-        .camera-panel {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(0, 0, 0, 0.8);
-            border-radius: 12px;
-            padding: 15px;
-            color: white;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            z-index: 100;
-            backdrop-filter: blur(10px);
-            width: 280px;
-        }
-
-        .camera-panel h3 {
-            color: #00ff88;
-            margin-bottom: 10px;
-            font-size: 14px;
-        }
-
-        .camera-container {
-            position: relative;
-            width: 250px;
-            height: 180px;
-            border-radius: 8px;
-            overflow: hidden;
-            border: 2px solid #00ff88;
-        }
-
-        #video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transform: scaleX(-1);
-        }
-
-        .camera-overlay {
-            position: absolute;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #87ceeb 0%, #e0f7fa 50%, #fff 100%);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s ease;
+        }
+        
+        .loading-screen.hidden {
+            opacity: 0;
             pointer-events: none;
         }
-
-        .gaze-target {
-            position: absolute;
+        
+        .loading-text {
+            color: #1a1a2e;
+            font-size: 24px;
+            margin-top: 30px;
+            font-weight: bold;
+        }
+        
+        /* 进度条容器 */
+        .progress-container {
+            width: 300px;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 6px;
+            margin-top: 20px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* 进度条 */
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #00ff88, #4ecdc4);
+            border-radius: 6px;
+            transition: width 0.3s ease;
+        }
+        
+        /* 进度百分比文字 */
+        .progress-text {
+            color: #1a1a2e;
+            font-size: 14px;
+            margin-top: 8px;
+            opacity: 0.8;
+        }
+        
+        /* 收集提示文字 - 固定在屏幕中央 */
+        .collect-hint-overlay {
+            position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 80px;
-            height: 80px;
-            border: 4px solid #0088ff;
-            border-radius: 50%;
-            animation: pulse 2s ease-in-out infinite;
+            font-size: 36px;
+            font-weight: bold;
+            color: #00ff88;
+            text-shadow: 0 0 20px rgba(0, 255, 136, 0.8), 0 0 40px rgba(0, 255, 136, 0.5);
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            animation: pulse 1s ease-in-out infinite;
         }
-
-        .gaze-target::before {
+        
+        .collect-hint-overlay.visible {
+            opacity: 1;
+        }
+        
+        /* 凝视倒计时圆环 */
+        .gaze-timer {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120px;
+            height: 120px;
+            border: 4px solid rgba(0, 255, 136, 0.3);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .gaze-timer.visible {
+            opacity: 1;
+        }
+        
+        .gaze-timer-progress {
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            width: 120px;
+            height: 120px;
+            border: 4px solid transparent;
+            border-top-color: #00ff88;
+            border-radius: 50%;
+            animation: spin 3s linear forwards;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        /* 收集计数 */
+        .collect-count {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #00ff88;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.8);
+            pointer-events: none;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px 20px;
+            border-radius: 25px;
+        }
+        
+        /* 收集成功提示 */
+        .collect-success {
+            position: fixed;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            font-size: 48px;
+            font-weight: bold;
+            color: #ffd700;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+            pointer-events: none;
+            z-index: 1001;
+            opacity: 0;
+        }
+        
+        .collect-success.show {
+            animation: collectPop 0.5s ease-out forwards;
+        }
+        
+        @keyframes collectPop {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+        
+        /* 气球容器 */
+        .balloons-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        /* 气球样式 */
+        .balloon {
+            position: absolute;
+            bottom: -150px;
+            width: 80px;
+            height: 100px;
+            animation: float-up linear infinite;
+        }
+        
+        .balloon::before {
             content: '';
             position: absolute;
-            top: 50%;
+            width: 80px;
+            height: 100px;
+            border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+            background: currentColor;
+        }
+        
+        .balloon::after {
+            content: '';
+            position: absolute;
             left: 50%;
-            transform: translate(-50%, -50%);
-            width: 40px;
-            height: 40px;
-            background: rgba(0, 136, 255, 0.3);
-            border-radius: 50%;
+            top: 100px;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 80px;
+            background: rgba(0, 0, 0, 0.2);
         }
-
-        .gaze-target.activated {
-            border-color: #00ff88;
-            animation: activated-pulse 1s ease-in-out infinite;
-        }
-
-        .gaze-target.activated::before {
-            background: rgba(0, 255, 136, 0.5);
-        }
-
-        @keyframes pulse {
-            0%, 100% {
-                box-shadow: 0 0 0 0 rgba(0, 136, 255, 0.4);
+        
+        /* 气球颜色 */
+        .balloon.red { color: #ff6b6b; }
+        .balloon.yellow { color: #ffe66d; }
+        .balloon.green { color: #00ff88; }
+        .balloon.blue { color: #4ecdc4; }
+        .balloon.pink { color: #ff9ff3; }
+        .balloon.orange { color: #ffa502; }
+        
+        /* 气球飘动动画 */
+        @keyframes float-up {
+            0% {
+                bottom: -150px;
+                transform: translateX(0) rotate(0deg);
+            }
+            25% {
+                transform: translateX(20px) rotate(5deg);
             }
             50% {
-                box-shadow: 0 0 0 10px rgba(0, 136, 255, 0);
+                transform: translateX(-20px) rotate(-5deg);
+            }
+            75% {
+                transform: translateX(15px) rotate(3deg);
+            }
+            100% {
+                bottom: 120%;
+                transform: translateX(-10px) rotate(-2deg);
             }
         }
-
-        @keyframes activated-pulse {
-            0%, 100% {
-                box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.6);
-            }
-            50% {
-                box-shadow: 0 0 0 15px rgba(0, 255, 136, 0);
-            }
+        
+        /* 不同气球的动画延迟和时长 */
+        .balloon:nth-child(1) { left: 10%; animation-duration: 8s; animation-delay: 0s; }
+        .balloon:nth-child(2) { left: 20%; animation-duration: 10s; animation-delay: 0.5s; }
+        .balloon:nth-child(3) { left: 35%; animation-duration: 7s; animation-delay: 1s; }
+        .balloon:nth-child(4) { left: 50%; animation-duration: 9s; animation-delay: 0.2s; }
+        .balloon:nth-child(5) { left: 65%; animation-duration: 11s; animation-delay: 1.5s; }
+        .balloon:nth-child(6) { left: 75%; animation-duration: 8s; animation-delay: 0.8s; }
+        .balloon:nth-child(7) { left: 85%; animation-duration: 10s; animation-delay: 0.3s; }
+        .balloon:nth-child(8) { left: 5%; animation-duration: 12s; animation-delay: 2s; }
+        .balloon:nth-child(9) { left: 45%; animation-duration: 9s; animation-delay: 1.2s; }
+        .balloon:nth-child(10) { left: 90%; animation-duration: 7s; animation-delay: 0.6s; }
+        
+        /* 小气球 */
+        .balloon.small {
+            width: 50px;
+            height: 65px;
         }
-
-        .camera-controls {
-            margin-top: 10px;
-            display: flex;
-            gap: 10px;
+        
+        .balloon.small::before {
+            width: 50px;
+            height: 65px;
         }
-
-        .camera-controls button {
-            flex: 1;
-            padding: 8px 12px;
-            font-size: 12px;
+        
+        .balloon.small::after {
+            top: 65px;
+            height: 50px;
         }
-
-        .camera-status {
-            margin-top: 10px;
-            font-size: 12px;
-            color: #aaa;
-        }
-
-        .camera-status.active {
-            color: #00ff88;
-        }
-
-        .gesture-hint {
-            margin-top: 8px;
-            font-size: 11px;
-            color: #666;
+        
+        /* 隐藏A-Frame默认加载界面 */
+        .a-loader-class {
+            display: none !important;
         }
     </style>
 </head>
+
 <body>
-    <div id="container">
-        <canvas id="canvas"></canvas>
-        <div class="loading" id="loading">加载中...</div>
-        
-        <div class="controls" id="controls">
-            <h2>🎮 控制面板</h2>
-            
-            <div class="control-group">
-                <label>旋转速度: <span id="rotation-value">1</span></label>
-                <input type="range" id="rotation-speed" min="0" max="5" step="0.1" value="1">
-            </div>
-            
-            <div class="control-group">
-                <label>
-                    <input type="checkbox" id="auto-rotate" checked> 自动旋转
-                </label>
-            </div>
-            
-            <div class="control-group">
-                <label>
-                    <input type="checkbox" id="show-wireframe"> 显示网格
-                </label>
-            </div>
-            
-            <div class="control-group">
-                <label>环境光强度: <span id="light-value">1</span></label>
-                <input type="range" id="light-intensity" min="0.1" max="3" step="0.1" value="1">
-            </div>
-            
-            <div class="button-group">
-                <button id="reset-view">重置视角</button>
-                <button id="toggle-camera" class="vr-btn">切换相机</button>
-                <button id="enter-vr" class="vr-btn">🎲 进入VR模式</button>
-            </div>
+    <!-- 气球飘动加载界面 -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="balloons-container">
+            <div class="balloon red"></div>
+            <div class="balloon yellow small"></div>
+            <div class="balloon green"></div>
+            <div class="balloon blue small"></div>
+            <div class="balloon pink"></div>
+            <div class="balloon orange small"></div>
+            <div class="balloon red small"></div>
+            <div class="balloon yellow"></div>
+            <div class="balloon blue"></div>
+            <div class="balloon green small"></div>
         </div>
-        
-        <div class="info-panel">
-            <h3>💡 操作提示</h3>
-            <ul>
-                <li>鼠标左键拖动: 旋转视角</li>
-                <li>鼠标滚轮: 缩放</li>
-                <li>鼠标右键拖动: 平移</li>
-                <li>点击VR按钮进入VR模式</li>
-                <li>使用摄像头眼动控制旋转</li>
-            </ul>
+        <div class="loading-text">🎈 正在加载热带岛屿...</div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
         </div>
-
-        <div class="camera-panel" id="cameraPanel">
-            <h3>👀 眼动控制</h3>
-            <div class="camera-container">
-                <video id="video" autoplay playsinline></video>
-                <div class="camera-overlay">
-                    <div class="gaze-target" id="gazeTarget"></div>
-                </div>
-            </div>
-            <div class="camera-controls">
-                <button id="startCamera">开启摄像头</button>
-                <button id="stopCamera" class="vr-btn">关闭摄像头</button>
-            </div>
-            <div class="camera-status" id="cameraStatus">未连接</div>
-            <div class="gesture-hint">💡 注视蓝色目标开始旋转，移开停止</div>
-        </div>
+        <div class="progress-text" id="progressText">0%</div>
     </div>
-
-    <script type="importmap">
-    {
-        "imports": {
-            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-        }
-    }
-    </script>
-
-    <script type="module">
-        import * as THREE from 'three';
-        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-        import { VRButton } from 'three/addons/webxr/VRButton.js';
-        import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
-
-        let scene, camera, renderer, controls;
-        let model, xrController1, xrController2;
-        let isVRMode = false;
-        let autoRotate = true;
-        let rotationSpeed = 1;
-        let grasses = [];
-        let clouds = [];
-        let butterflies = [];
-        let waterPlane = null;
-        let sun = null;
-        let sunGlow = null;
-        let stars = null;
-        let particles = [];
-        let time = 0;
+    
+    <!-- 收集提示文字覆盖层 -->
+    <div class="collect-hint-overlay" id="collectHintOverlay">🎯 收集食物</div>
+    
+    <!-- 凝视倒计时圆环 -->
+    <div class="gaze-timer" id="gazeTimer">
+        <div class="gaze-timer-progress" id="gazeTimerProgress"></div>
+    </div>
+    
+    <!-- 收集成功提示 -->
+    <div class="collect-success" id="collectSuccess">✅ +1 食物</div>
+    
+    <!-- 收集计数 -->
+    <div class="collect-count" id="collectCount">🍉 收集: 0</div>
+    
+    <!-- A-Frame 场景 -->
+    <a-scene
+        background="color: #87ceeb"
+        renderer="antialias: true; colorManagement: true; physicallyCorrectLights: true"
+        vr-mode-ui="enabled: true"
+        device-orientation-permission-ui="enabled: true"
+        loading-screen="enabled: true"
+        gltf-model="dracoDecoderPath: https://www.gstatic.com/draco/versioned/decoders/1.5.6/"
+        fog="type: exponential; color: #87ceeb; density: 0.01"
+        shadow="type: pcfsoft"
+        id="scene">
         
-        let video = null;
-        let videoStream = null;
-        let isCameraActive = false;
-        let isGazeDetected = false;
-        let gazeStartTime = 0;
-        let canvas2d = null;
-        let ctx = null;
-        let detectionInterval = null;
-
-        const container = document.getElementById('container');
-        const canvas = document.getElementById('canvas');
-        const loading = document.getElementById('loading');
-        const controlsDiv = document.getElementById('controls');
-
-        function init() {
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x87ceeb);
+        <!-- ASSETS 资产管理系统 -->
+        <a-assets timeout="30000">
+            <a-asset-item id="islandModel" src="https://wdock.oss-cn-shanghai.aliyuncs.com/Stylized%20Tropical%20Island.glb"></a-asset-item>
+        </a-assets>
+        
+        <!-- 天空盒 -->
+        <a-sky color="#87ceeb"></a-sky>
+        
+        <!-- LIGHTS 灯光系统 -->
+        <!-- 环境光 -->
+        <a-entity light="type: ambient; color: #ffffff; intensity: 0.6"></a-entity>
+        
+        <!-- 主方向光 -->
+        <a-entity 
+            light="type: directional; color: #ffffff; intensity: 0.8; castShadow: true"
+            position="10 20 10"
+            shadow="cast: true; receive: true">
+        </a-entity>
+        
+        <!-- 补光1 -->
+        <a-entity light="type: point; color: #ffffaa; intensity: 0.5; distance: 30" position="-5 8 -5"></a-entity>
+        
+        <!-- 补光2 -->
+        <a-entity light="type: point; color: #aaffff; intensity: 0.3; distance: 30" position="5 8 5"></a-entity>
+        
+        <!-- CAMERA / VR RIG 相机和VR装置 -->
+        <!-- 手机端自动使用陀螺仪控制（device-orientation-controls），无需触屏 -->
+        <a-entity id="rig" position="0 1.6 18">
+            <a-camera
+                look-controls="enabled: true; magicWindowTrackingEnabled: true; touchEnabled: false"
+                wasd-controls="enabled: true; acceleration: 30"
+                position="0 0 0"
+                fov="75">
+                
+                <!-- 注视光标 - 确保在手机上也能显示 -->
+                <a-cursor
+                fuse="true"
+                fuse-timeout="3000"
+                geometry="primitive: ring; radiusInner: 0.015; radiusOuter: 0.026"
+                material="color: #00ff88; shader: flat; opacity: 1"
+                raycaster="objects: .collectible"
+                visible="true">
+            </a-cursor>
+        </a-camera>
+    </a-entity>
+        
+        <!-- 热带岛屿模型 -->
+        <a-entity
+            id="tropicalIsland"
+            gltf-model="#islandModel"
+            position="0 -0.5 0"
+            scale="2 2 2"
+            shadow="cast: true; receive: true"
+            class="clickable">
+        </a-entity>
+        
+        <!-- 地面 -->
+        <a-circle
+            radius="80"
+            rotation="-90 0 0"
+            color="#228b22"
+            shadow="receive: true"
+            material="roughness: 0.8; metalness: 0.2">
+        </a-circle>
+        
+        <!-- 沙滩 -->
+        <a-circle
+            radius="60"
+            rotation="-90 0 0"
+            position="0 0.01 0"
+            color="#f4d03f"
+            shadow="receive: true"
+            material="roughness: 0.9; metalness: 0.1">
+        </a-circle>
+        
+        <!-- 水面 -->
+        <a-circle
+            radius="90"
+            rotation="-90 0 0"
+            position="0 0.02 0"
+            color="#1e90ff"
+            material="opacity: 0.8; roughness: 0.3; metalness: 0.1; transparent: true"
+            animation="property: material.opacity; from: 0.75 to: 0.85; dur: 2000; dir: alternate; loop: true; easing: easeInOutSine">
+        </a-circle>
+        
+        <!-- 太阳 -->
+        <a-sphere
+            radius="3"
+            position="30 25 30"
+            color="#ffffaa"
+            material="shader: flat"
+            animation="property: scale; from: 1 1 1; to: 1.02 1.02 1.02; dur: 1000; dir: alternate; loop: true; easing: easeInOutSine">
+        </a-sphere>
+        
+        <!-- 太阳光晕 -->
+        <a-sphere
+            radius="5"
+            position="30 25 30"
+            color="#ffdd88"
+            material="opacity: 0.3; transparent: true; shader: flat"
+            animation="property: scale; from: 1 1 1; to: 1.1 1.1 1.1; dur: 2000; dir: alternate; loop: true; easing: easeInOutSine"
+            animation__opacity="property: material.opacity; from: 0.25 to: 0.35; dur: 2000; dir: alternate; loop: true; easing: easeInOutSine">
+        </a-sphere>
+        
+        <!-- 云朵 (多个) -->
+        <a-entity id="clouds">
+            <a-entity class="cloud" position="-20 20 -10">
+                <a-sphere radius="3" position="0 0 0" color="#ffffff" material="roughness: 0.1"></a-sphere>
+                <a-sphere radius="2.5" position="3 -0.5 0.5" color="#ffffff" material="roughness: 0.1"></a-sphere>
+                <a-sphere radius="2" position="-2 0.2 -0.3" color="#ffffff" material="roughness: 0.1"></a-sphere>
+            </a-entity>
             
-            const fog = new THREE.Fog(0x87ceeb, 10, 100);
-            scene.fog = fog;
-
-            camera = new THREE.PerspectiveCamera(
-                75,
-                window.innerWidth / window.innerHeight,
-                0.1,
-                1000
-            );
-            camera.position.set(0, 6, 18);
-
-            renderer = new THREE.WebGLRenderer({
-                canvas: canvas,
-                antialias: true,
-                alpha: true
-            });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
-            renderer.xr.enabled = true;
-            renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
-            const vrButton = VRButton.createButton(renderer);
-            vrButton.style.display = 'none';
-            document.body.appendChild(vrButton);
-
-            controls = new OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
-            controls.minDistance = 3;
-            controls.maxDistance = 50;
-            controls.maxPolarAngle = Math.PI / 2;
-
-            createLights();
-            createSkybox();
-            createGround();
-            loadModel();
-
-            setupXRControllers();
-
-            setupEventListeners();
-
-            animate();
+            <a-entity class="cloud" position="15 18 5">
+                <a-sphere radius="2.5" position="0 0 0" color="#ffffff" material="roughness: 0.1"></a-sphere>
+                <a-sphere radius="2" position="2.5 -0.3 0.3" color="#ffffff" material="roughness: 0.1"></a-sphere>
+                <a-sphere radius="1.8" position="-1.5 0.1 -0.2" color="#ffffff" material="roughness: 0.1"></a-sphere>
+            </a-entity>
+            
+            <a-entity class="cloud" position="-5 22 -25">
+                <a-sphere radius="3.5" position="0 0 0" color="#ffffff" material="roughness: 0.1"></a-sphere>
+                <a-sphere radius="2.8" position="3.5 -0.4 0.4" color="#ffffff" material="roughness: 0.1"></a-sphere>
+                <a-sphere radius="2.2" position="-2.5 0.2 -0.3" color="#ffffff" material="roughness: 0.1"></a-sphere>
+            </a-entity>
+            
+            <a-entity class="cloud" position="30 16 -15">
+                <a-sphere radius="2" position="0 0 0" color="#ffffff" material="roughness: 0.1"></a-sphere>
+                <a-sphere radius="1.8" position="2 -0.2 0.2" color="#ffffff" material="roughness: 0.1"></a-sphere>
+                <a-sphere radius="1.5" position="-1.2 0.1 -0.1" color="#ffffff" material="roughness: 0.1"></a-sphere>
+            </a-entity>
+        </a-entity>
+        
+        <!-- 草地效果 -->
+        <a-entity id="grasses">
+            <!-- 随机生成多个草 -->
+            <a-cone radius-bottom="0.08" radius-top="0.01" height="0.4" position="-3 0.2 2" color="#228b22" segments-radial="6" animation="property: rotation; from: 0 0 -15; to: 0 0 15; dur: 2000; dir: alternate; loop: true; easing: easeInOutSine"></a-cone>
+            <a-cone radius-bottom="0.08" radius-top="0.01" height="0.35" position="2 0.2 -1" color="#32cd32" segments-radial="6" animation="property: rotation; from: 0 0 -12; to: 0 0 12; dur: 1800; dir: alternate; loop: true; easing: easeInOutSine"></a-cone>
+            <a-cone radius-bottom="0.08" radius-top="0.01" height="0.45" position="-1 0.2 3" color="#2e8b57" segments-radial="6" animation="property: rotation; from: 0 0 -18; to: 0 0 18; dur: 2200; dir: alternate; loop: true; easing: easeInOutSine"></a-cone>
+            <a-cone radius-bottom="0.08" radius-top="0.01" height="0.3" position="4 0.2 1" color="#3cb371" segments-radial="6" animation="property: rotation; from: 0 0 -10; to: 0 0 10; dur: 1600; dir: alternate; loop: true; easing: easeInOutSine"></a-cone>
+            <a-cone radius-bottom="0.08" radius-top="0.01" height="0.4" position="-2 0.2 -3" color="#228b22" segments-radial="6" animation="property: rotation; from: 0 0 -14; to: 0 0 14; dur: 2100; dir: alternate; loop: true; easing: easeInOutSine"></a-cone>
+        </a-entity>
+        
+        <!-- 蝴蝶效果 -->
+        <a-entity id="butterflies">
+            <a-entity class="butterfly" position="-2 3 1" animation="property: position; to: 2 4 -1; dur: 8000; dir: alternate; loop: true; easing: easeInOutSine">
+                <a-sphere radius="0.3" position="-0.2 0 0" scale="1 1.5 0.5" color="#ff6b6b" animation="property: rotation; from: 0 0 0; to: 0 0 45; dur: 200; dir: alternate; loop: true"></a-sphere>
+                <a-sphere radius="0.3" position="0.2 0 0" scale="1 1.5 0.5" color="#ff6b6b" animation="property: rotation; from: 0 0 0; to: 0 0 -45; dur: 200; dir: alternate; loop: true"></a-sphere>
+                <a-cylinder radius="0.03" height="0.5" color="#333"></a-cylinder>
+            </a-entity>
+            
+            <a-entity class="butterfly" position="1 4 -2" animation="property: position; to: -1 5 2; dur: 10000; dir: alternate; loop: true; easing: easeInOutSine">
+                <a-sphere radius="0.25" position="-0.15 0 0" scale="1 1.5 0.5" color="#4ecdc4" animation="property: rotation; from: 0 0 0; to: 0 0 50; dur: 180; dir: alternate; loop: true"></a-sphere>
+                <a-sphere radius="0.25" position="0.15 0 0" scale="1 1.5 0.5" color="#4ecdc4" animation="property: rotation; from: 0 0 0; to: 0 0 -50; dur: 180; dir: alternate; loop: true"></a-sphere>
+                <a-cylinder radius="0.025" height="0.4" color="#333"></a-cylinder>
+            </a-entity>
+            
+            <a-entity class="butterfly" position="-1 5 3" animation="property: position; to: 3 6 -1; dur: 9000; dir: alternate; loop: true; easing: easeInOutSine">
+                <a-sphere radius="0.28" position="-0.18 0 0" scale="1 1.5 0.5" color="#ffe66d" animation="property: rotation; from: 0 0 0; to: 0 0 40; dur: 220; dir: alternate; loop: true"></a-sphere>
+                <a-sphere radius="0.28" position="0.18 0 0" scale="1 1.5 0.5" color="#ffe66d" animation="property: rotation; from: 0 0 0; to: 0 0 -40; dur: 220; dir: alternate; loop: true"></a-sphere>
+                <a-cylinder radius="0.028" height="0.45" color="#333"></a-cylinder>
+            </a-entity>
+        </a-entity>
+        
+        <!-- 星空粒子 -->
+        <a-entity id="stars" position="0 0 0">
+            <!-- 使用多个小球体创建星空效果 -->
+            <a-sphere radius="0.1" position="-50 80 -60" color="#ffffff" material="shader: flat; opacity: 0.8"></a-sphere>
+            <a-sphere radius="0.15" position="40 75 -70" color="#ffffff" material="shader: flat; opacity: 0.9"></a-sphere>
+            <a-sphere radius="0.12" position="-30 90 -40" color="#ffffff" material="shader: flat; opacity: 0.7"></a-sphere>
+            <a-sphere radius="0.08" position="60 85 -50" color="#ffffff" material="shader: flat; opacity: 0.85"></a-sphere>
+            <a-sphere radius="0.14" position="-70 70 -80" color="#ffffff" material="shader: flat; opacity: 0.75"></a-sphere>
+            <a-sphere radius="0.1" position="20 95 -30" color="#ffffff" material="shader: flat; opacity: 0.8"></a-sphere>
+            <a-sphere radius="0.13" position="-45 88 -55" color="#ffffff" material="shader: flat; opacity: 0.88"></a-sphere>
+            <a-sphere radius="0.09" position="55 78 -65" color="#ffffff" material="shader: flat; opacity: 0.72"></a-sphere>
+            <a-sphere radius="0.11" position="-25 92 -45" color="#ffffff" material="shader: flat; opacity: 0.82"></a-sphere>
+            <a-sphere radius="0.16" position="35 82 -75" color="#ffffff" material="shader: flat; opacity: 0.78"></a-sphere>
+        </a-entity>
+        
+    </a-scene>
+    
+    <script>
+        // 进度条元素
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        let currentProgress = 0;
+        
+        // 模拟初始加载进度（避免长时间显示0%）
+        let simInterval = setInterval(() => {
+            if (currentProgress < 30) {
+                currentProgress += Math.random() * 5;
+                updateProgress(currentProgress);
+            }
+        }, 200);
+        
+        // 更新进度条
+        function updateProgress(percent) {
+            currentProgress = Math.min(percent, 100);
+            progressBar.style.width = currentProgress + '%';
+            progressText.textContent = Math.round(currentProgress) + '%';
         }
-
-        function createLights() {
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-            scene.add(ambientLight);
-
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            directionalLight.position.set(10, 20, 10);
-            directionalLight.castShadow = true;
-            directionalLight.shadow.mapSize.width = 2048;
-            directionalLight.shadow.mapSize.height = 2048;
-            directionalLight.shadow.camera.near = 0.5;
-            directionalLight.shadow.camera.far = 50;
-            directionalLight.shadow.camera.left = -20;
-            directionalLight.shadow.camera.right = 20;
-            directionalLight.shadow.camera.top = 20;
-            directionalLight.shadow.camera.bottom = -20;
-            scene.add(directionalLight);
-
-            const pointLight1 = new THREE.PointLight(0xffffaa, 0.5, 30);
-            pointLight1.position.set(-5, 8, -5);
-            scene.add(pointLight1);
-
-            const pointLight2 = new THREE.PointLight(0xaaffff, 0.3, 30);
-            pointLight2.position.set(5, 8, 5);
-            scene.add(pointLight2);
-        }
-
-        function createSkybox() {
-            const skyGeometry = new THREE.SphereGeometry(500, 64, 64);
-            const canvas = document.createElement('canvas');
-            canvas.width = 512;
-            canvas.height = 512;
-            const ctx = canvas.getContext('2d');
-            
-            const gradient = ctx.createLinearGradient(0, 0, 0, 512);
-            gradient.addColorStop(0, '#1a1a4e');
-            gradient.addColorStop(0.3, '#4a90d9');
-            gradient.addColorStop(0.6, '#87ceeb');
-            gradient.addColorStop(0.8, '#b0e0e6');
-            gradient.addColorStop(1, '#e0f7fa');
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, 512, 512);
-            
-            for (let i = 0; i < 100; i++) {
-                const x = Math.random() * 512;
-                const y = Math.random() * 256;
-                const size = Math.random() * 2 + 0.5;
-                ctx.beginPath();
-                ctx.arc(x, y, size, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(255, 255, 255, ${0.3 + Math.random() * 0.5})`;
-                ctx.fill();
+        
+        // A-Frame资产加载进度事件
+        document.querySelector('a-scene').addEventListener('progress', function (evt) {
+            // 清除模拟进度
+            if (simInterval) {
+                clearInterval(simInterval);
+                simInterval = null;
             }
             
-            const skyTexture = new THREE.CanvasTexture(canvas);
-            skyTexture.wrapS = THREE.RepeatWrapping;
-            skyTexture.wrapT = THREE.ClampToEdgeWrapping;
+            // 计算实际加载进度（30%基础 + 70%资产加载）
+            const assetProgress = evt.detail.total ? (evt.detail.loaded / evt.detail.total) * 70 : 0;
+            const totalProgress = 30 + assetProgress;
+            updateProgress(totalProgress);
+        });
+        
+        // 场景加载完成事件 - 隐藏气球加载界面
+        document.querySelector('a-scene').addEventListener('loaded', function () {
+            console.log('A-Frame 场景加载完成');
+            updateProgress(100);
             
-            const skyMaterial = new THREE.MeshBasicMaterial({
-                map: skyTexture,
-                side: THREE.BackSide,
-                transparent: true
-            });
+            // 延迟一点时间再隐藏，让进度条显示完整
+            setTimeout(() => {
+                document.getElementById('loadingScreen').classList.add('hidden');
+            }, 500);
+        });
+        
+        // 模型加载完成事件 - 设置西瓜交互
+        document.querySelector('#tropicalIsland').addEventListener('model-loaded', function () {
+            console.log('模型加载成功');
+            // 模型加载完成后增加进度
+            updateProgress(Math.min(currentProgress + 30, 95));
             
-            const skybox = new THREE.Mesh(skyGeometry, skyMaterial);
-            skybox.rotation.x = Math.PI / 2;
-            scene.add(skybox);
-
-            createSun();
-            createStars();
-        }
-
-        function createSun() {
-            const sunGeometry = new THREE.SphereGeometry(3, 32, 32);
-            const sunMaterial = new THREE.MeshBasicMaterial({
-                color: 0xffffaa
-            });
-            sun = new THREE.Mesh(sunGeometry, sunMaterial);
-            sun.position.set(30, 25, 30);
-            scene.add(sun);
-
-            const glowGeometry = new THREE.SphereGeometry(5, 32, 32);
-            const glowMaterial = new THREE.MeshBasicMaterial({
-                color: 0xffdd88,
-                transparent: true,
-                opacity: 0.3
-            });
-            sunGlow = new THREE.Mesh(glowGeometry, glowMaterial);
-            sunGlow.position.copy(sun.position);
-            scene.add(sunGlow);
-        }
-
-        function createStars() {
-            const starsGeometry = new THREE.BufferGeometry();
-            const starCount = 500;
-            const positions = new Float32Array(starCount * 3);
-            const opacities = new Float32Array(starCount);
+            // 为西瓜添加交互能力
+            setupWatermelonInteraction();
+        });
+        
+        // 设置西瓜交互
+        function setupWatermelonInteraction() {
+            const sceneEl = document.querySelector('a-scene');
+            const collectHintOverlay = document.getElementById('collectHintOverlay');
+            const gazeTimer = document.getElementById('gazeTimer');
+            const gazeTimerProgress = document.getElementById('gazeTimerProgress');
+            const collectSuccess = document.getElementById('collectSuccess');
+            const collectCount = document.getElementById('collectCount');
             
-            for (let i = 0; i < starCount * 3; i += 3) {
-                positions[i] = (Math.random() - 0.5) * 1000;
-                positions[i + 1] = (Math.random() - 0.5) * 1000;
-                positions[i + 2] = (Math.random() - 0.5) * 1000;
-                opacities[i / 3] = Math.random();
-            }
+            let collectCountNum = 0;
+            let gazeTimeout = null;
             
-            starsGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            starsGeometry.setAttribute('opacity', new THREE.BufferAttribute(opacities, 1));
+            console.log('=== Setting up watermelon interaction ===');
             
-            const starsMaterial = new THREE.PointsMaterial({
-                color: 0xffffff,
-                size: 0.5,
-                transparent: true,
-                opacity: 0.8,
-                vertexColors: false
-            });
-            stars = new THREE.Points(starsGeometry, starsMaterial);
-            scene.add(stars);
-        }
-
-        function createParticles() {
-            for (let i = 0; i < 20; i++) {
-                const particleGeometry = new THREE.SphereGeometry(0.05, 8, 8);
-                const particleMaterial = new THREE.MeshBasicMaterial({
-                    color: new THREE.Color().setHSL(0.1 + Math.random() * 0.2, 0.8, 0.7),
-                    transparent: true,
-                    opacity: 0.8
-                });
-                const particle = new THREE.Mesh(particleGeometry, particleMaterial);
-                particle.position.set(
-                    (Math.random() - 0.5) * 50,
-                    0.5 + Math.random() * 10,
-                    (Math.random() - 0.5) * 50
-                );
-                particles.push({
-                    mesh: particle,
-                    speed: 0.01 + Math.random() * 0.02,
-                    offset: Math.random() * Math.PI * 2,
-                    height: particle.position.y
-                });
-                scene.add(particle);
-            }
-        }
-
-        function createGround() {
-            const groundGeometry = new THREE.CircleGeometry(80, 64);
-            const groundMaterial = new THREE.MeshStandardMaterial({
-                color: 0x228b22,
-                roughness: 0.8,
-                metalness: 0.2
-            });
-            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-            ground.rotation.x = -Math.PI / 2;
-            ground.receiveShadow = true;
-            scene.add(ground);
-
-            const sandGeometry = new THREE.CircleGeometry(60, 64);
-            const sandMaterial = new THREE.MeshStandardMaterial({
-                color: 0xf4d03f,
-                roughness: 0.9,
-                metalness: 0.1
-            });
-            const sand = new THREE.Mesh(sandGeometry, sandMaterial);
-            sand.rotation.x = -Math.PI / 2;
-            sand.receiveShadow = true;
-            sand.position.y = 0.01;
-            scene.add(sand);
-
-            createWater();
-
-            for (let i = 0; i < 150; i++) {
-                const grassGeometry = new THREE.ConeGeometry(0.08, 0.4, 6);
-                const grassMaterial = new THREE.MeshStandardMaterial({
-                    color: new THREE.Color().setHSL(0.33, 0.6, 0.25 + Math.random() * 0.25),
-                    roughness: 0.7
-                });
-                const grass = new THREE.Mesh(grassGeometry, grassMaterial);
-                const x = (Math.random() - 0.5) * 120;
-                const z = (Math.random() - 0.5) * 120;
-                grass.position.set(x, 0.2, z);
-                grass.rotation.y = Math.random() * Math.PI * 2;
-                grass.scale.y = 0.4 + Math.random() * 0.6;
-                grass.castShadow = true;
-                grasses.push({ mesh: grass, offset: Math.random() * Math.PI * 2, speed: 0.5 + Math.random() * 0.5 });
-                scene.add(grass);
-            }
-
-            createClouds();
-            createButterflies();
-            createParticles();
-        }
-
-        function createWater() {
-            const waterGeometry = new THREE.CircleGeometry(90, 64);
-            const waterMaterial = new THREE.MeshStandardMaterial({
-                color: 0x1e90ff,
-                roughness: 0.3,
-                metalness: 0.1,
-                transparent: true,
-                opacity: 0.8
-            });
-            waterPlane = new THREE.Mesh(waterGeometry, waterMaterial);
-            waterPlane.rotation.x = -Math.PI / 2;
-            waterPlane.receiveShadow = true;
-            waterPlane.position.y = 0.02;
-            scene.add(waterPlane);
-        }
-
-        function createClouds() {
-            for (let i = 0; i < 8; i++) {
-                const cloudGroup = new THREE.Group();
-                const cloudColor = new THREE.Color().setHSL(0.6, 0.1, 0.95 + Math.random() * 0.05);
-                
-                for (let j = 0; j < 3; j++) {
-                    const cloudGeometry = new THREE.SphereGeometry(3 + Math.random() * 2, 16, 16);
-                    const cloudMaterial = new THREE.MeshStandardMaterial({
-                        color: cloudColor,
-                        roughness: 0.1,
-                        metalness: 0
-                    });
-                    const cloudPart = new THREE.Mesh(cloudGeometry, cloudMaterial);
-                    cloudPart.position.set(
-                        (j - 1) * 4 + (Math.random() - 0.5) * 2,
-                        Math.random() * 1,
-                        (Math.random() - 0.5) * 2
-                    );
-                    cloudPart.scale.setScalar(0.8 + Math.random() * 0.4);
-                    cloudGroup.add(cloudPart);
-                }
-                
-                cloudGroup.position.set(
-                    (Math.random() - 0.5) * 140,
-                    15 + Math.random() * 10,
-                    (Math.random() - 0.5) * 140
-                );
-                
-                clouds.push({ 
-                    group: cloudGroup, 
-                    speed: 0.01 + Math.random() * 0.02,
-                    amplitude: 0.5 + Math.random() * 0.5,
-                    offset: Math.random() * Math.PI * 2 
-                });
-                scene.add(cloudGroup);
-            }
-        }
-
-        function createButterflies() {
-            for (let i = 0; i < 12; i++) {
-                const butterflyGroup = new THREE.Group();
-                
-                const wingGeometry = new THREE.SphereGeometry(0.3, 8, 8);
-                const wingMaterial = new THREE.MeshStandardMaterial({
-                    color: new THREE.Color().setHSL(Math.random(), 0.8, 0.6),
-                    roughness: 0.3,
-                    metalness: 0,
-                    transparent: true,
-                    opacity: 0.8
-                });
-                
-                const leftWing = new THREE.Mesh(wingGeometry, wingMaterial);
-                leftWing.position.x = -0.2;
-                leftWing.scale.y = 1.5;
-                
-                const rightWing = new THREE.Mesh(wingGeometry, wingMaterial);
-                rightWing.position.x = 0.2;
-                rightWing.scale.y = 1.5;
-                
-                const bodyGeometry = new THREE.CylinderGeometry(0.03, 0.03, 0.5, 8);
-                const bodyMaterial = new THREE.MeshStandardMaterial({
-                    color: 0x333333,
-                    roughness: 0.5
-                });
-                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-                
-                butterflyGroup.add(leftWing, rightWing, body);
-                butterflyGroup.position.set(
-                    (Math.random() - 0.5) * 40,
-                    2 + Math.random() * 8,
-                    (Math.random() - 0.5) * 40
-                );
-                
-                butterflies.push({ 
-                    group: butterflyGroup,
-                    speed: 0.02 + Math.random() * 0.03,
-                    wingSpeed: 3 + Math.random() * 2,
-                    height: butterflyGroup.position.y,
-                    offset: Math.random() * Math.PI * 2 
-                });
-                scene.add(butterflyGroup);
-            }
-        }
-
-        function loadModel() {
-            const loader = new GLTFLoader();
-            
-            loader.load('https://wdock.oss-cn-shanghai.aliyuncs.com/Stylized%20Tropical%20Island.glb', (gltf) => {
-                model = gltf.scene;
-                
-                model.traverse((child) => {
-                    if (child.isMesh) {
-                        child.castShadow = true;
-                        child.receiveShadow = true;
+            // 监听raycaster-intersection事件（开始凝视）
+            sceneEl.addEventListener('raycaster-intersection', function(evt) {
+                evt.detail.els.forEach(function(el) {
+                    if (el.classList.contains('collectible')) {
+                        console.log('*** Found collectible object (watermelon) ***');
                         
-                        if (child.material) {
-                            child.material.roughness = 0.7;
-                            child.material.metalness = 0.1;
-                        }
-                    }
-                });
-                
-                model.scale.set(2, 2, 2);
-                model.position.y = -0.5;
-                
-                scene.add(model);
-                loading.classList.add('hide');
-            }, (xhr) => {
-                const percent = Math.round((xhr.loaded / xhr.total) * 100);
-                loading.textContent = `加载中... ${percent}%`;
-            }, (error) => {
-                console.error('模型加载失败:', error);
-                loading.textContent = '加载失败，请检查文件';
-            });
-        }
-
-        function setupXRControllers() {
-            const controllerModelFactory = new XRControllerModelFactory();
-
-            xrController1 = renderer.xr.getController(0);
-            xrController1.addEventListener('selectstart', onSelectStart);
-            xrController1.addEventListener('selectend', onSelectEnd);
-            scene.add(xrController1);
-
-            const grip1 = renderer.xr.getControllerGrip(0);
-            grip1.add(controllerModelFactory.createControllerModel(grip1));
-            scene.add(grip1);
-
-            xrController2 = renderer.xr.getController(1);
-            xrController2.addEventListener('selectstart', onSelectStart);
-            xrController2.addEventListener('selectend', onSelectEnd);
-            scene.add(xrController2);
-
-            const grip2 = renderer.xr.getControllerGrip(1);
-            grip2.add(controllerModelFactory.createControllerModel(grip2));
-            scene.add(grip2);
-        }
-
-        let isSelecting = false;
-        let raycaster, intersects;
-
-        function onSelectStart(event) {
-            isSelecting = true;
-            const controller = event.target;
-            
-            raycaster = new THREE.Raycaster();
-            const tempMatrix = new THREE.Matrix4();
-            tempMatrix.identity().extractRotation(controller.matrixWorld);
-            raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
-            raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
-            
-            if (model) {
-                intersects = raycaster.intersectObject(model, true);
-                if (intersects.length > 0) {
-                    const object = intersects[0].object;
-                    object.material.emissive.set(0xff0000);
-                }
-            }
-        }
-
-        function onSelectEnd(event) {
-            isSelecting = false;
-            if (model) {
-                model.traverse((child) => {
-                    if (child.isMesh && child.material) {
-                        child.material.emissive.set(0x000000);
-                    }
-                });
-            }
-        }
-
-        function setupEventListeners() {
-            window.addEventListener('resize', onWindowResize);
-
-            document.getElementById('rotation-speed').addEventListener('input', (e) => {
-                rotationSpeed = parseFloat(e.target.value);
-                document.getElementById('rotation-value').textContent = rotationSpeed;
-            });
-
-            document.getElementById('auto-rotate').addEventListener('change', (e) => {
-                autoRotate = e.target.checked;
-            });
-
-            document.getElementById('show-wireframe').addEventListener('change', (e) => {
-                if (model) {
-                    model.traverse((child) => {
-                        if (child.isMesh) {
-                            child.material.wireframe = e.target.checked;
-                        }
-                    });
-                }
-            });
-
-            document.getElementById('light-intensity').addEventListener('input', (e) => {
-                const intensity = parseFloat(e.target.value);
-                document.getElementById('light-value').textContent = intensity;
-                scene.children.forEach((child) => {
-                    if (child.isDirectionalLight) {
-                        child.intensity = intensity * 0.8;
-                    } else if (child.isAmbientLight) {
-                        child.intensity = intensity * 0.6;
+                        // 显示提示和倒计时
+                        collectHintOverlay.classList.add('visible');
+                        gazeTimer.classList.add('visible');
+                        
+                        // 重置并启动倒计时动画
+                        gazeTimerProgress.style.animation = 'none';
+                        setTimeout(() => {
+                            gazeTimerProgress.style.animation = 'spin 3s linear forwards';
+                        }, 10);
+                        
+                        // 设置3秒后自动收集
+                        gazeTimeout = setTimeout(function() {
+                            collectItem(el);
+                        }, 3000);
                     }
                 });
             });
-
-            document.getElementById('reset-view').addEventListener('click', () => {
-                camera.position.set(0, 6, 18);
-                controls.target.set(0, 0, 0);
-                controls.update();
-            });
-
-            document.getElementById('toggle-camera').addEventListener('click', () => {
-                if (camera.position.y > 4) {
-                    camera.position.set(0, 1.5, 5);
-                    controls.target.set(0, 0, 0);
-                } else {
-                    camera.position.set(0, 6, 18);
-                    controls.target.set(0, 0, 0);
-                }
-                controls.update();
-            });
-
-            document.getElementById('enter-vr').addEventListener('click', () => {
-                if (!isVRMode) {
-                    renderer.xr.setSessionType('immersive-vr');
-                    controls.enabled = false;
-                    controlsDiv.style.display = 'none';
-                    isVRMode = true;
+            
+            // 监听raycaster-intersection-cleared事件（停止凝视）
+            sceneEl.addEventListener('raycaster-intersection-cleared', function(evt) {
+                if (evt.detail.el && evt.detail.el.classList.contains('collectible')) {
+                    console.log('*** Left collectible object ***');
+                    
+                    // 隐藏提示和倒计时
+                    collectHintOverlay.classList.remove('visible');
+                    gazeTimer.classList.remove('visible');
+                    
+                    // 清除倒计时
+                    if (gazeTimeout) {
+                        clearTimeout(gazeTimeout);
+                        gazeTimeout = null;
+                    }
                 }
             });
-
-            document.getElementById('startCamera').addEventListener('click', startCamera);
-            document.getElementById('stopCamera').addEventListener('click', stopCamera);
-        }
-
-        async function startCamera() {
-            try {
-                videoStream = await navigator.mediaDevices.getUserMedia({ video: { width: 250, height: 180, frameRate: 30 } });
-                video = document.getElementById('video');
-                video.srcObject = videoStream;
-                isCameraActive = true;
-                document.getElementById('cameraStatus').textContent = '准备就绪';
-                document.getElementById('cameraStatus').classList.add('active');
+            
+            // 收集物品函数
+            function collectItem(el) {
+                console.log('*** Collecting item ***');
                 
-                canvas2d = document.createElement('canvas');
-                canvas2d.width = 250;
-                canvas2d.height = 180;
-                ctx = canvas2d.getContext('2d');
+                // 隐藏提示和倒计时
+                collectHintOverlay.classList.remove('visible');
+                gazeTimer.classList.remove('visible');
                 
-                if (detectionInterval) {
-                    clearInterval(detectionInterval);
-                }
-                detectionInterval = setInterval(detectGaze, 50);
-            } catch (error) {
-                console.error('摄像头开启失败:', error);
-                document.getElementById('cameraStatus').textContent = '摄像头访问被拒绝';
-                document.getElementById('cameraStatus').classList.remove('active');
+                // 更新收集计数
+                collectCountNum++;
+                collectCount.textContent = '🍉 收集: ' + collectCountNum;
+                
+                // 显示收集成功动画
+                collectSuccess.classList.add('show');
+                
+                // 隐藏成功提示
+                setTimeout(function() {
+                    collectSuccess.classList.remove('show');
+                }, 1500);
+                
+                console.log('Collected! Total:', collectCountNum);
             }
-        }
-
-        function stopCamera() {
-            if (videoStream) {
-                videoStream.getTracks().forEach(track => track.stop());
-                video.srcObject = null;
-            }
-            if (detectionInterval) {
-                clearInterval(detectionInterval);
-                detectionInterval = null;
-            }
-            isCameraActive = false;
-            isGazeDetected = false;
-            gazeStartTime = 0;
-            document.getElementById('cameraStatus').textContent = '未连接';
-            document.getElementById('cameraStatus').classList.remove('active');
-        }
-
-        function detectGaze() {
-            if (!isCameraActive || !video || !ctx) return;
-
-            ctx.drawImage(video, 0, 0, 250, 180);
             
-            const centerX = 125;
-            const centerY = 90;
-            const gazeRadius = 40;
-            
-            let eyePixels = [];
-            let totalBrightness = 0;
-            let pixelCount = 0;
-            
-            for (let y = centerY - gazeRadius; y < centerY + gazeRadius; y += 2) {
-                for (let x = centerX - gazeRadius; x < centerX + gazeRadius; x += 2) {
-                    if (x >= 0 && x < 250 && y >= 0 && y < 180) {
-                        const r = ctx.getImageData(x, y, 1, 1).data[0];
-                        const g = ctx.getImageData(x, y, 1, 1).data[1];
-                        const b = ctx.getImageData(x, y, 1, 1).data[2];
-                        
-                        const brightness = (r + g + b) / 3;
-                        
-                        if (brightness > 180 && brightness < 255) {
-                            const distance = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
-                            if (distance < gazeRadius) {
-                                eyePixels.push({ x, y, brightness });
-                                totalBrightness += brightness;
-                                pixelCount++;
+            // 为模型中的绿色物体（西瓜）添加可交互的透明包裹层
+            setTimeout(function() {
+                const islandModel = document.querySelector('#tropicalIsland');
+                console.log('=== Checking for watermelon model ===');
+                
+                if (islandModel && islandModel.object3D) {
+                    islandModel.object3D.traverse(function(child) {
+                        if (child.isMesh && child.material && child.material.color) {
+                            const c = child.material.color;
+                            
+                            // 检测绿色物体（西瓜）- 使用更宽松的条件
+                            if (c.g > c.r && c.g > c.b && c.g > 0.2) {
+                                console.log('✅ Found watermelon:', child.name);
+                                
+                                // 创建一个独立的可交互实体（不跟随模型旋转）
+                                const wrapper = document.createElement('a-entity');
+                                wrapper.classList.add('collectible');
+                                
+                                // 获取世界坐标
+                                const worldPos = new THREE.Vector3();
+                                child.getWorldPosition(worldPos);
+                                
+                                // 设置位置（稍微抬高一点）
+                                wrapper.setAttribute('position', {
+                                    x: worldPos.x,
+                                    y: worldPos.y + 0.3,
+                                    z: worldPos.z
+                                });
+                                
+                                // 添加不可见的碰撞球体（半径大一些）
+                                wrapper.setAttribute('geometry', {
+                                    primitive: 'sphere',
+                                    radius: 0.8
+                                });
+                                wrapper.setAttribute('material', {
+                                    opacity: 0,
+                                    transparent: true
+                                });
+                                
+                                // 添加到场景中（不跟随模型旋转）
+                                sceneEl.appendChild(wrapper);
+                                console.log('✅ Added watermelon collectible wrapper');
                             }
                         }
-                    }
-                }
-            }
-            
-            const gazeTarget = document.getElementById('gazeTarget');
-            
-            if (pixelCount > 30) {
-                const avgBrightness = totalBrightness / pixelCount;
-                
-                if (avgBrightness > 200) {
-                    if (!isGazeDetected) {
-                        gazeStartTime = Date.now();
-                    }
-                    isGazeDetected = true;
+                    });
                     
-                    const gazeDuration = (Date.now() - gazeStartTime) / 1000;
-                    const speed = Math.min(gazeDuration * 0.5 + 0.5, 3);
-                    
-                    document.getElementById('cameraStatus').textContent = `� 注视中 - 速度: ${speed.toFixed(1)}`;
-                    gazeTarget.classList.add('activated');
-                } else {
-                    isGazeDetected = false;
-                    gazeStartTime = 0;
-                    document.getElementById('cameraStatus').textContent = '👀 未注视目标';
-                    gazeTarget.classList.remove('activated');
+                    // 显示调试信息
+                    const collectibles = document.querySelectorAll('.collectible');
+                    console.log('=== Total watermelon collectible objects:', collectibles.length);
                 }
-            } else {
-                isGazeDetected = false;
-                gazeStartTime = 0;
-                document.getElementById('cameraStatus').textContent = '等待注视...';
-                gazeTarget.classList.remove('activated');
-            }
+            }, 3000); // 延迟3秒确保模型加载完成
         }
-
-        function isSkinColor(r, g, b) {
-            if (r < 50 || g < 40 || b < 30) return false;
-            
-            const rNorm = r / 255;
-            const gNorm = g / 255;
-            const bNorm = b / 255;
-            
-            const hasHighR = r > g && r > b;
-            const hasLowB = b < r - 10 && b < g - 5;
-            const ratio = (r - g) / (r + g + b + 1);
-            
-            return hasHighR && hasLowB && ratio > 0.02;
+        
+        // 模型加载失败处理
+        document.querySelector('#tropicalIsland').addEventListener('error', function (evt) {
+            console.error('模型加载失败:', evt.detail);
+            document.querySelector('.loading-text').textContent = '❌ 加载失败，请检查网络连接';
+            document.querySelector('.loading-text').style.color = '#ff6b6b';
+            if (simInterval) clearInterval(simInterval);
+        });
+        
+        // VR 模式进入/退出事件
+        document.querySelector('a-scene').addEventListener('enter-vr', function () {
+            console.log('进入 VR 模式');
+        });
+        
+        document.querySelector('a-scene').addEventListener('exit-vr', function () {
+            console.log('退出 VR 模式');
+        });
+        
+        // 检测是否为移动设备
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        if (isMobile) {
+            console.log('移动设备检测：启用陀螺仪控制');
+        } else {
+            console.log('桌面设备：使用鼠标和键盘控制');
         }
-
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
-
-        function animate() {
-            renderer.setAnimationLoop(render);
-        }
-
-        function render() {
-            time += 0.016;
-
-            if (isCameraActive && model && !isVRMode) {
-                if (isGazeDetected) {
-                    const gazeDuration = (Date.now() - gazeStartTime) / 1000;
-                    const speed = Math.min(gazeDuration * 0.5 + 0.5, 3);
-                    model.rotation.y += 0.02 * speed;
-                }
-            } else if (autoRotate && model && !isVRMode && !isCameraActive) {
-                model.rotation.y += 0.005 * rotationSpeed;
-            }
-
-            grasses.forEach((grass) => {
-                grass.mesh.rotation.z = Math.sin(time * grass.speed + grass.offset) * 0.15;
-                grass.mesh.position.x += Math.sin(time * grass.speed * 0.5 + grass.offset) * 0.002;
-            });
-
-            clouds.forEach((cloud) => {
-                cloud.group.position.x += cloud.speed;
-                cloud.group.position.y = cloud.group.position.y + Math.sin(time + cloud.offset) * cloud.amplitude * 0.02;
-                
-                if (cloud.group.position.x > 80) {
-                    cloud.group.position.x = -80;
-                }
-            });
-
-            butterflies.forEach((butterfly) => {
-                butterfly.group.position.x += Math.sin(time * butterfly.speed + butterfly.offset) * 0.05;
-                butterfly.group.position.z += Math.cos(time * butterfly.speed * 0.8 + butterfly.offset) * 0.05;
-                butterfly.group.position.y = butterfly.height + Math.sin(time * 2 + butterfly.offset) * 0.3;
-                butterfly.group.rotation.y += 0.02;
-                
-                const wingFlap = Math.sin(time * butterfly.wingSpeed) * 0.5;
-                const leftWing = butterfly.group.children[0];
-                const rightWing = butterfly.group.children[1];
-                if (leftWing) leftWing.rotation.z = wingFlap;
-                if (rightWing) rightWing.rotation.z = -wingFlap;
-            });
-
-            if (waterPlane) {
-                waterPlane.material.opacity = 0.75 + Math.sin(time * 2) * 0.05;
-                waterPlane.rotation.z = Math.sin(time * 0.5) * 0.01;
-            }
-
-            if (sun) {
-                sun.scale.setScalar(1 + Math.sin(time * 3) * 0.02);
-            }
-            
-            if (sunGlow) {
-                sunGlow.material.opacity = 0.25 + Math.sin(time * 2) * 0.1;
-                sunGlow.scale.setScalar(1 + Math.sin(time * 2) * 0.1);
-            }
-
-            if (stars) {
-                stars.rotation.y += 0.0002;
-                const opacities = stars.geometry.attributes.opacity.array;
-                for (let i = 0; i < opacities.length; i++) {
-                    opacities[i] = 0.3 + Math.sin(time * 2 + i * 0.1) * 0.5;
-                }
-                stars.geometry.attributes.opacity.needsUpdate = true;
-            }
-
-            particles.forEach((particle) => {
-                particle.mesh.position.y = particle.height + Math.sin(time * particle.speed + particle.offset) * 0.5;
-                particle.mesh.position.x += Math.cos(time * particle.speed + particle.offset) * 0.02;
-                particle.mesh.rotation.y += 0.02;
-                
-                const opacity = 0.5 + Math.sin(time * 2 + particle.offset) * 0.3;
-                particle.mesh.material.opacity = opacity;
-            });
-
-            controls.update();
-            renderer.render(scene, camera);
-        }
-
-        init();
+        
+        // 云朵漂浮动画
+        document.querySelectorAll('.cloud').forEach((cloud, index) => {
+            const duration = 20000 + index * 3000;
+            const direction = index % 2 === 0 ? 1 : -1;
+            cloud.setAttribute('animation', `property: position.x; from: ${-60 * direction} 18 0; to: ${60 * direction} 18 0; dur: ${duration}; loop: true; dir: alternate; easing: linear`);
+        });
+        
+        // 蝴蝶飞舞动画增强
+        document.querySelectorAll('.butterfly').forEach((butterfly, index) => {
+            const offset = index * 1000;
+            const duration = 6000 + index * 1000;
+            butterfly.setAttribute('animation__y', `property: position.y; from: ${2 + index} to: ${5 + index}; dur: ${duration}; dir: alternate; loop: true; easing: easeInOutSine; delay: ${offset}`);
+        });
     </script>
 </body>
 </html>
